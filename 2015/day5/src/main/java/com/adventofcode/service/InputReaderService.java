@@ -23,14 +23,20 @@ public class InputReaderService {
         this.bulkSize = bulkSize;
     }
 
-    public void read(String filepath) throws IOException, URISyntaxException {
+    public void read(String filepath) {
 
-        List<String> allLines = getAllFileLines(filepath);
+        try {
+            
+            List<String> allLines = getAllFileLines(filepath);
 
-        ReadFileTask task = new ReadFileTask(allLines);
-        ForkJoinPool
-                .commonPool()
-                .execute(task);
+            ReadFileTask task = new ReadFileTask(allLines);
+            ForkJoinPool
+                    .commonPool()
+                    .execute(task);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
     }
 
     private List<String> getAllFileLines(String filepath) throws IOException, URISyntaxException {

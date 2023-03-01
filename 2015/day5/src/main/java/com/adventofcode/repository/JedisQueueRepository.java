@@ -8,19 +8,18 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 
+import com.adventofcode.factory.JedisPoolFactory;
+
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 public class JedisQueueRepository<S extends Serializable> implements QueueRepository<S> {
 
-    private final JedisPool poolConnections;
+    private final JedisPool poolConnections = JedisPoolFactory.getInstance();
     private final String keyName;
     private final byte[] keyNameByte;
 
-    public JedisQueueRepository(
-            JedisPool poolConnections,
-            String keyName) {
-        this.poolConnections = poolConnections;
+    public JedisQueueRepository(String keyName) {
         this.keyName = keyName;
         this.keyNameByte = this.keyName.getBytes();
     }

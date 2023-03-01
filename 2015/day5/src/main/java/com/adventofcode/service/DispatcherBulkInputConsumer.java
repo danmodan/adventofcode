@@ -3,26 +3,30 @@ package com.adventofcode.service;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.adventofcode.model.Text;
 import com.adventofcode.repository.QueueRepository;
 
-public class DispatcherBulkInputConsumer implements Consumer<Collection<String>> {
+public class DispatcherBulkInputConsumer<Q> implements Consumer<Collection<String>> {
 
-    private final QueueRepository<Text> queueRepository;
+    private final QueueRepository<Q> queueRepository;
+    private final Function<String, Q> instantiationFuncMap;
 
-    public DispatcherBulkInputConsumer(QueueRepository<Text> queueRepository) {
+    public DispatcherBulkInputConsumer(
+            QueueRepository<Q> queueRepository,
+            Function<String, Q> instantiationFuncMap) {
         this.queueRepository = queueRepository;
+        this.instantiationFuncMap = instantiationFuncMap;
     }
 
     @Override
-    public void accept(Collection<String> message) {
-        List<Text> texts = message
+    public void accept(Collection<String> rawMessages) {
+        List<Q> elementsInstances = rawMessages
             .stream()
-            .map(Text::new)
+            .map(instantiationFuncMap)
             .collect(Collectors.toList());
 
-        queueRepository.addAll(texts);
+        queueRepository.addAll(elementsInstances);
     }
 }

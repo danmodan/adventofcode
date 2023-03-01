@@ -5,19 +5,18 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Set;
 
+import com.adventofcode.factory.JedisPoolFactory;
+
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 public class JedisSetRepository<S extends Serializable> implements SetRepository<S> {
 
-    private final JedisPool poolConnections;
+    private final JedisPool poolConnections = JedisPoolFactory.getInstance();
     private final String keyName;
     private final byte[] keyNameByte;
 
-    public JedisSetRepository(
-            JedisPool poolConnections,
-            String keyName) {
-        this.poolConnections = poolConnections;
+    public JedisSetRepository(String keyName) {
         this.keyName = keyName;
         this.keyNameByte = this.keyName.getBytes();
     }
