@@ -23,14 +23,20 @@ public class NaughtNiceTextApp {
     private static final int BULK_SIZE = 100;
     private static final String INPUT_TXT = "input.txt";
     private static final Pattern VOWEL_PATTERN = Pattern.compile("\\b(?=(.*[aeiou]){3,}).*\\b");
-    private static final Pattern REPETITION_PATTERN = Pattern.compile("\\b(?=.*(.)\\1).*\\b");
+    private static final Pattern REPETITION_FORBIDDEN_PATTERN = Pattern.compile("\\b(?=.*(.)\\1).*\\b");
     private static final Pattern NEGATE_PAIR_PATTERN = Pattern.compile("\\b(?!.*(ab|cd|pq|xy)).*\\b");
+    private static final Pattern LETTER_PAIR_PATTERN = Pattern.compile("\\b(?=.*((..).*\\2)).*\\b");
+    private static final Pattern REPETITION_PATTERN = Pattern.compile("\\b(?=.*((.).\\2)).*\\b");
 
     private static final Predicate<Text> VOWEL_PATTERN_PREDICATE = text -> VOWEL_PATTERN
             .matcher(text.getData()).matches();
-    private static final Predicate<Text> REPETITION_PATTERN_PREDICATE = text -> REPETITION_PATTERN
+    private static final Predicate<Text> REPETITION_FORBIDDEN_PATTERN_PREDICATE = text -> REPETITION_FORBIDDEN_PATTERN
             .matcher(text.getData()).matches();
     private static final Predicate<Text> NEGATE_PAIR_PATTERN_PREDICATE = text -> NEGATE_PAIR_PATTERN
+            .matcher(text.getData()).matches();
+    private static final Predicate<Text> LETTER_PAIR_PATTERN_PREDICATE = text -> LETTER_PAIR_PATTERN
+            .matcher(text.getData()).matches();
+    private static final Predicate<Text> REPETITION_PATTERN_PREDICATE = text -> REPETITION_PATTERN
             .matcher(text.getData()).matches();
 
     // P1: \b(?=(.*[aeiou]){3,})(?=.*(.)\2)(?!.*(ab|cd|pq|xy)).*\b
@@ -45,8 +51,11 @@ public class NaughtNiceTextApp {
         Consumer<Text> poppedElementConsumer = new BranchingSetsConsumer<>(
                 Set.of(
                         Map.entry(VOWEL_PATTERN_PREDICATE, new JedisSetRepository<>("VowelNiceTexts")),
-                        Map.entry(REPETITION_PATTERN_PREDICATE, new JedisSetRepository<>("RepetitionNiceTexts")),
-                        Map.entry(NEGATE_PAIR_PATTERN_PREDICATE, new JedisSetRepository<>("NegateNiceTexts"))));
+                        Map.entry(REPETITION_FORBIDDEN_PATTERN_PREDICATE, new JedisSetRepository<>("RepetitionForbiddenNiceTexts")),
+                        Map.entry(NEGATE_PAIR_PATTERN_PREDICATE, new JedisSetRepository<>("NegateNiceTexts")),
+                        Map.entry(LETTER_PAIR_PATTERN_PREDICATE, new JedisSetRepository<>("LetterPairNiceTexts")),
+                        Map.entry(REPETITION_PATTERN_PREDICATE, new JedisSetRepository<>("RepetitionNiceTexts"))
+                        ));
 
         QueuePopWorkerService<Text> queuePopWorkerService = new QueuePopWorkerService<>(
                 naughtNiceTextListRepository,
