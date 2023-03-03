@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -13,6 +12,7 @@ import com.adventofcode.model.Text;
 import com.adventofcode.repository.JedisQueueRepository;
 import com.adventofcode.repository.JedisSetRepository;
 import com.adventofcode.repository.QueueRepository;
+import com.adventofcode.repository.SetRepository;
 import com.adventofcode.service.BranchingSetsConsumer;
 import com.adventofcode.service.DispatcherBulkInputConsumer;
 import com.adventofcode.service.InputReaderService;
@@ -20,7 +20,7 @@ import com.adventofcode.service.QueuePopWorkerService;
 
 public class NaughtNiceTextApp {
 
-    private static final int BULK_SIZE = 100;
+    private static final int BULK_SIZE = 10;
     private static final String INPUT_TXT = "input.txt";
     private static final Pattern VOWEL_PATTERN = Pattern.compile("\\b(?=(.*[aeiou]){3,}).*\\b");
     private static final Pattern REPETITION_FORBIDDEN_PATTERN = Pattern.compile("\\b(?=.*(.)\\1).*\\b");
@@ -48,14 +48,20 @@ public class NaughtNiceTextApp {
 
         QueueRepository<Text> naughtNiceTextListRepository = new JedisQueueRepository<>("NaughtNiceTexts");
 
+        SetRepository<Text> vowelNiceTexts = new JedisSetRepository<>("VowelNiceTexts");
+        SetRepository<Text> repetitionForbiddenNiceTexts = new JedisSetRepository<>("RepetitionForbiddenNiceTexts");
+        SetRepository<Text> negateNiceTexts = new JedisSetRepository<>("NegateNiceTexts");
+        SetRepository<Text> letterPairNiceTexts = new JedisSetRepository<>("LetterPairNiceTexts");
+        SetRepository<Text> repetitionNiceTexts = new JedisSetRepository<>("RepetitionNiceTexts");
+
         Consumer<Text> poppedElementConsumer = new BranchingSetsConsumer<>(
                 Set.of(
-                        Map.entry(VOWEL_PATTERN_PREDICATE, new JedisSetRepository<>("VowelNiceTexts")),
-                        Map.entry(REPETITION_FORBIDDEN_PATTERN_PREDICATE, new JedisSetRepository<>("RepetitionForbiddenNiceTexts")),
-                        Map.entry(NEGATE_PAIR_PATTERN_PREDICATE, new JedisSetRepository<>("NegateNiceTexts")),
-                        Map.entry(LETTER_PAIR_PATTERN_PREDICATE, new JedisSetRepository<>("LetterPairNiceTexts")),
-                        Map.entry(REPETITION_PATTERN_PREDICATE, new JedisSetRepository<>("RepetitionNiceTexts"))
-                        ));
+                        Map.entry(VOWEL_PATTERN_PREDICATE, vowelNiceTexts),
+                        Map.entry(REPETITION_FORBIDDEN_PATTERN_PREDICATE, repetitionForbiddenNiceTexts),
+                        Map.entry(NEGATE_PAIR_PATTERN_PREDICATE, negateNiceTexts),
+                        Map.entry(LETTER_PAIR_PATTERN_PREDICATE, letterPairNiceTexts),
+                        Map.entry(REPETITION_PATTERN_PREDICATE, repetitionNiceTexts)
+                ));
 
         QueuePopWorkerService<Text> queuePopWorkerService = new QueuePopWorkerService<>(
                 naughtNiceTextListRepository,
@@ -71,12 +77,21 @@ public class NaughtNiceTextApp {
                 CompletableFuture.runAsync(() -> queuePopWorkerService.process(2)),
                 CompletableFuture.runAsync(() -> queuePopWorkerService.process(2)),
                 CompletableFuture.runAsync(() -> queuePopWorkerService.process(2)),
-                CompletableFuture.runAsync(() -> queuePopWorkerService.process(2)))
-                .orTimeout(20, TimeUnit.SECONDS)
-                .thenAccept(prev -> {
-                    long stop = System.currentTimeMillis();
-                    System.out.println("fim: " + (stop - start));
-                })
-                .join();
+                CompletableFuture.runAsync(() -> queuePopWorkerService.process(2))
+        )
+        .thenCompose(prev -> {
+                return CompletableFuture
+                        .supplyAsync(() -> vowelNiceTexts.intersect(repetitionForbiddenNiceTexts, negateNiceTexts))
+                        .thenAcceptBoth(CompletableFuture.supplyAsync(() -> letterPairNiceTexts.intersect(repetitionNiceTexts)), 
+                        (prev1, prev2) -> {
+                                System.out.println("parte 1: " + prev1.size());
+                                System.out.println("parte 2: " + prev2.size());
+                        });
+        })
+        .thenAccept(prev -> {
+                long stop = System.currentTimeMillis();
+                System.out.println("fim: " + (stop - start));
+        })
+        .join();
     }
 }
