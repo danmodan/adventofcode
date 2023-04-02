@@ -1,0 +1,4 @@
+turn on 0,0 through 9,9
+turn on 60,60 through 69,69
+turn on 20,20 through 50,50
+toggle 0,0 through 69,69
