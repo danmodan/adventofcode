@@ -16,7 +16,7 @@ public class WrappingPaperCalculator {
 
     private static final int MAX_CONSUMER_THREADS = 10;
     private static final int MAX_QUEUE_SIZE = 100;
-    private static final String PATH = "day2/input.txt";
+    private static final String PATH = "2015/build/resources/main/day2/input.txt";
 
     public static void main(String[] args) throws InterruptedException {
 

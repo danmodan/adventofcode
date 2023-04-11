@@ -29,6 +29,7 @@ project(':common') {
 
     dependencies {
         api 'org.springframework:spring-context:6.0.7'
+        api 'org.springframework:spring-aspects:6.0.7'
         api 'redis.clients:jedis:4.3.0'
     }
 }

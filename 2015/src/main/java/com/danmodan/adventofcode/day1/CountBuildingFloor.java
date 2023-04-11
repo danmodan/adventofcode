@@ -9,7 +9,7 @@ import java.util.Queue;
 
 public class CountBuildingFloor {
 
-    private static final String PATH = "day1/input.txt";
+    private static final String PATH = "2015/build/resources/main/day1/input.txt";
 
     public static final void main(String... args) throws Exception {
 

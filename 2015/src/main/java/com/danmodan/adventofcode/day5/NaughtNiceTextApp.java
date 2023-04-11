@@ -21,7 +21,7 @@ import com.danmodan.adventofcode.day5.service.QueuePopWorkerService;
 public class NaughtNiceTextApp {
 
     private static final int BULK_SIZE = 10;
-    private static final String INPUT_TXT = "input.txt";
+    private static final String INPUT_TXT = "day5/input.txt";
     private static final Pattern VOWEL_PATTERN = Pattern.compile("\\b(?=(.*[aeiou]){3,}).*\\b");
     private static final Pattern REPETITION_FORBIDDEN_PATTERN = Pattern.compile("\\b(?=.*(.)\\1).*\\b");
     private static final Pattern NEGATE_PAIR_PATTERN = Pattern.compile("\\b(?!.*(ab|cd|pq|xy)).*\\b");
