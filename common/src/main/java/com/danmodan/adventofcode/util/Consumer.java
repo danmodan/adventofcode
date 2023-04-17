@@ -5,11 +5,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.danmodan.adventofcode.log.LoggerFactory;
-
 public class Consumer {
 
-    private static final Logger log = LoggerFactory.getLogger(Consumer.class);
+    private static final Logger log = Logger.getLogger(Consumer.class.getName());
 
     private final SynchronizedQueue queue;
     private final java.util.function.Consumer consumerFunc;

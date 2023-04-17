@@ -16,7 +16,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.danmodan.adventofcode.log.LoggerFactory;
+import com.danmodan.adventofcode.common.config.LoggerConfig;
 
 public class SantaVsRoboSantaDeliveringPresents {
 
@@ -25,6 +25,9 @@ public class SantaVsRoboSantaDeliveringPresents {
     private static final int CONSUMER_THREADS_AMOUNT = 2;
 
     public static final void main(String... args) {
+
+        var logConfig = new LoggerConfig(Level.SEVERE);
+        logConfig.createRootLogger();
 
         ThreadSafeQueue santaQueue = new ThreadSafeQueue(MAX_QUEUE_SIZE);
         ThreadSafeQueue roboQueue = new ThreadSafeQueue(MAX_QUEUE_SIZE);
@@ -53,7 +56,6 @@ public class SantaVsRoboSantaDeliveringPresents {
             }
         }
 
-        LoggerFactory.setRootLoggerLevel(Level.SEVERE);
         AnswerCollector.log.setLevel(Level.INFO);
         StepConsumer.log.setLevel(Level.INFO);
 
@@ -103,7 +105,7 @@ public class SantaVsRoboSantaDeliveringPresents {
 
 class AnswerCollector extends Thread {
 
-    public static final Logger log = LoggerFactory.getLogger(AnswerCollector.class);
+    public static final Logger log = Logger.getLogger(AnswerCollector.class.getName());
 
     private final Semaphore semaphore;
     private final int permits;
@@ -147,7 +149,7 @@ class AnswerCollector extends Thread {
 
 class StepConsumer extends Thread {
 
-    public static final Logger log = LoggerFactory.getLogger(StepConsumer.class);
+    public static final Logger log = Logger.getLogger(StepConsumer.class.getName());
 
     private final ThreadSafeQueue queue;
     private final SantaTrack santaTrack;
@@ -193,7 +195,7 @@ class StepConsumer extends Thread {
 
 class StepReaderProducer extends Thread {
 
-    private static final Logger log = LoggerFactory.getLogger(StepReaderProducer.class);
+    private static final Logger log = Logger.getLogger(StepReaderProducer.class.getName());
 
     private static final char NEW_LINE = '\n';
     private static final char EOF = (char) -1;

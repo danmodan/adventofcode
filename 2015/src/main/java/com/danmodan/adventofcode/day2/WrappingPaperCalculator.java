@@ -5,7 +5,7 @@ import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.danmodan.adventofcode.log.LoggerFactory;
+import com.danmodan.adventofcode.common.config.LoggerConfig;
 import com.danmodan.adventofcode.util.Consumer;
 import com.danmodan.adventofcode.util.Consumer.TimeElapsedException;
 import com.danmodan.adventofcode.util.Producer;
@@ -19,6 +19,9 @@ public class WrappingPaperCalculator {
     private static final String PATH = "2015/build/resources/main/day2/input.txt";
 
     public static void main(String[] args) throws InterruptedException {
+
+        var logConfig = new LoggerConfig(Level.SEVERE);
+        logConfig.createRootLogger();
 
         SynchronizedQueue queue = new SynchronizedQueue(MAX_QUEUE_SIZE);
         Calculator calculator = new Calculator();
@@ -58,7 +61,6 @@ public class WrappingPaperCalculator {
             threads[i] = createConsumerThread(semaphore, consumer);
         }
 
-        LoggerFactory.setRootLoggerLevel(Level.SEVERE);
         AnswerCaptureRunnable.log.setLevel(Level.INFO);
 
         for (Thread t : threads) {
@@ -133,7 +135,7 @@ class ConsumerRunnable implements Runnable {
 
 class AnswerCaptureRunnable implements Runnable {
 
-    public static final Logger log = LoggerFactory.getLogger(AnswerCaptureRunnable.class);
+    public static final Logger log = Logger.getLogger(AnswerCaptureRunnable.class.getName());
 
     private final Semaphore semaphore;
     private final Calculator calculator;

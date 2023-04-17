@@ -5,11 +5,9 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.danmodan.adventofcode.log.LoggerFactory;
-
 public class Monitor {
 
-    private static final Logger log = LoggerFactory.getLogger(Monitor.class);
+    private static final Logger log = Logger.getLogger(Monitor.class.getName());
 
     private final Supplier<String> logFunc;
     private final long delayMilliseconds;

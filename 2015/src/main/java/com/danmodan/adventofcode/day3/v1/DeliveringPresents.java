@@ -15,7 +15,7 @@ import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.danmodan.adventofcode.log.LoggerFactory;
+import com.danmodan.adventofcode.common.config.LoggerConfig;
 
 public class DeliveringPresents {
 
@@ -24,6 +24,9 @@ public class DeliveringPresents {
     private static final int CONSUMER_THREADS_AMOUNT = 1;
 
     public static final void main(String... args) {
+
+        var logConfig = new LoggerConfig(Level.SEVERE);
+        logConfig.createRootLogger();
 
         ThreadSafeQueue queue = new ThreadSafeQueue(MAX_QUEUE_SIZE);
         Semaphore semaphore = new Semaphore(0);
@@ -43,7 +46,6 @@ public class DeliveringPresents {
             threads[i] = createConsumerThread(queue, santaTrack, semaphore);
         }
 
-        LoggerFactory.setRootLoggerLevel(Level.SEVERE);
         AnswerCollector.log.setLevel(Level.INFO);
         StepConsumer.log.setLevel(Level.INFO);
 
@@ -90,7 +92,7 @@ public class DeliveringPresents {
 
 class AnswerCollector extends Thread {
 
-    public static final Logger log = LoggerFactory.getLogger(AnswerCollector.class);
+    public static final Logger log = Logger.getLogger(AnswerCollector.class.getName());
 
     private final Semaphore semaphore;
     private final int permits;
@@ -128,7 +130,7 @@ class AnswerCollector extends Thread {
 
 class StepConsumer extends Thread {
 
-    public static final Logger log = LoggerFactory.getLogger(StepConsumer.class);
+    public static final Logger log = Logger.getLogger(StepConsumer.class.getName());
 
     private final ThreadSafeQueue queue;
     private final SantaTrack santaTrack;
@@ -174,7 +176,7 @@ class StepConsumer extends Thread {
 
 class StepReaderProducer extends Thread {
 
-    private static final Logger log = LoggerFactory.getLogger(StepReaderProducer.class);
+    private static final Logger log = Logger.getLogger(StepReaderProducer.class.getName());
 
     private static final char NEW_LINE = '\n';
     private static final char EOF = (char) -1;

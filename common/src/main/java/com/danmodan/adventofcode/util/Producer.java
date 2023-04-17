@@ -7,11 +7,9 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.danmodan.adventofcode.log.LoggerFactory;
-
 public class Producer {
 
-    private static final Logger log = LoggerFactory.getLogger(Producer.class);
+    private static final Logger log = Logger.getLogger(Producer.class.getName());
 
     private final Path path;
     private final SynchronizedQueue queue;
