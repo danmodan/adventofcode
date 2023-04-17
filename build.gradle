@@ -31,6 +31,7 @@ project(':common') {
         api 'org.springframework:spring-context:6.0.7'
         api 'org.springframework:spring-aspects:6.0.7'
         api 'redis.clients:jedis:4.3.0'
+        api 'jakarta.annotation:jakarta.annotation-api:2.1.1'
     }
 }
 

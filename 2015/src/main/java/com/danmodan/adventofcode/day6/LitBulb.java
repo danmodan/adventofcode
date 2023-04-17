@@ -13,6 +13,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Component;
+
 import com.danmodan.adventofcode.day6.model.*;
 
 public class LitBulb {
@@ -22,28 +36,28 @@ public class LitBulb {
 
     public static void main(String[] args) throws Exception {
 
-        List<Command> commands = getCommandList(INPUT_FILE_PATH);
+        // List<Command> commands = getCommandList(INPUT_FILE_PATH);
 
-        BulbGrid bulbGrid = new BulbGrid(1000);
+        // BulbGrid bulbGrid = new BulbGrid(1000);
 
-        commands.forEach(bulbGrid::process);
+        // commands.forEach(bulbGrid::process);
 
-        try (
-            Writer writer = new FileWriter("day6/output.txt");
-            BufferedWriter bw = new BufferedWriter(writer);
-        ) {
+        // try (
+        //     Writer writer = new FileWriter("day6/output.txt");
+        //     BufferedWriter bw = new BufferedWriter(writer);
+        // ) {
 
-            for(int i = bulbGrid.grid.length - 1 ; i >= 0; i--) {
-                BigBinary row = bulbGrid.grid[i];
-                String rowTxt = row.toString()
-                        .substring(0, bulbGrid.grid.length)
-                        .replace('1', '#')
-                        .replace('0', '.');
-                bw.write(rowTxt + System.lineSeparator());
-            }
-        }
+        //     for(int i = bulbGrid.grid.length - 1 ; i >= 0; i--) {
+        //         BigBinary row = bulbGrid.grid[i];
+        //         String rowTxt = row.toString()
+        //                 .substring(0, bulbGrid.grid.length)
+        //                 .replace('1', '#')
+        //                 .replace('0', '.');
+        //         bw.write(rowTxt + System.lineSeparator());
+        //     }
+        // }
 
-        System.out.println("lit bulb counter = " + bulbGrid.countLitBulbs());
+        // System.out.println("lit bulb counter = " + bulbGrid.countLitBulbs());
     }
 
     private static List<Command> getCommandList(String inputFilePath) throws IOException {
