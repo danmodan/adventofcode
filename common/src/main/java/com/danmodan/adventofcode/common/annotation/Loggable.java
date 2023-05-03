@@ -9,5 +9,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Loggable {
 
-    String level() default "FINE";
+    String level() default "INFO";
 }

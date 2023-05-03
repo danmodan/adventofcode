@@ -37,7 +37,13 @@ project(':common') {
 
 project(':2015') {
 
+    apply plugin: 'application'
+
     dependencies {
         implementation project(':common')
+    }
+
+    application {
+        mainClassName = project.hasProperty("mainClass") ? project.getProperty("mainClass") : "NULL"
     }
 }

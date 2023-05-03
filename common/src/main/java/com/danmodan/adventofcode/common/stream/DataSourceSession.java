@@ -2,6 +2,7 @@ package com.danmodan.adventofcode.common.stream;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class DataSourceSession {
@@ -22,8 +23,13 @@ public class DataSourceSession {
         this.transfromFunc = transfromFunc;
     }
 
-    public DataSourceSession connect() throws IOException {
-        connector.connect();
+    public DataSourceSession connect() {
+
+        try {
+            connector.connect();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return this;
     }
 
@@ -33,6 +39,14 @@ public class DataSourceSession {
             return null;
         }
         return (R) transfromFunc.apply(polled.getRawData());
+    }
+
+    public <R> void performOnData(Consumer<R> consumerFunc) {
+
+        R r = null;
+        while ((r = poll()) != null) {
+            consumerFunc.accept(r);
+        }
     }
 
     public static ConnectorBuilder readStream() {

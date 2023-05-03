@@ -1,189 +1,117 @@
 package com.danmodan.adventofcode.day6;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Writer;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.PrintWriter;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.annotation.AfterReturning;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Pointcut;
-import org.springframework.context.ApplicationContext;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.io.Resource;
-import org.springframework.stereotype.Component;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.stereotype.Service;
 
-import com.danmodan.adventofcode.day6.model.*;
+import com.danmodan.adventofcode.common.stream.DataSourceSession;
+import com.danmodan.adventofcode.day6.model.Action;
+import com.danmodan.adventofcode.day6.model.BulbGrid;
+import com.danmodan.adventofcode.day6.model.Command;
+import com.danmodan.adventofcode.day6.model.Point;
 
+@Configuration
+@ComponentScan({ "com.danmodan.adventofcode.day6", "com.danmodan.adventofcode.common" })
+@PropertySource("classpath:day6/application.properties")
 public class LitBulb {
-
-    private static final String REGEX = "^(toggle|turn off|turn on)|(\\d{0,3},\\d{0,3}(?= through))|((?<=through )\\d{0,3},\\d{0,3})";
-    private static final String INPUT_FILE_PATH = "day6/input.txt";
 
     public static void main(String[] args) throws Exception {
 
-        // List<Command> commands = getCommandList(INPUT_FILE_PATH);
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(LitBulb.class)) {
 
-        // BulbGrid bulbGrid = new BulbGrid(1000);
+            DataSourceSession session = context.getBean(DataSourceSession.class);
+            BulbGrid grid = context.getBean(BulbGrid.class);
+            ResultService resultService = context.getBean(ResultService.class);
 
-        // commands.forEach(bulbGrid::process);
-
-        // try (
-        //     Writer writer = new FileWriter("day6/output.txt");
-        //     BufferedWriter bw = new BufferedWriter(writer);
-        // ) {
-
-        //     for(int i = bulbGrid.grid.length - 1 ; i >= 0; i--) {
-        //         BigBinary row = bulbGrid.grid[i];
-        //         String rowTxt = row.toString()
-        //                 .substring(0, bulbGrid.grid.length)
-        //                 .replace('1', '#')
-        //                 .replace('0', '.');
-        //         bw.write(rowTxt + System.lineSeparator());
-        //     }
-        // }
-
-        // System.out.println("lit bulb counter = " + bulbGrid.countLitBulbs());
+            CompletableFuture
+                    .allOf(
+                            CompletableFuture.runAsync(session::connect),
+                            CompletableFuture.runAsync(() -> session.performOnData(grid::process)))
+                    .thenRunAsync(() -> resultService.process(context.getEnvironment().getProperty("output.file-path")))
+                    .join();
+        }
     }
 
-    private static List<Command> getCommandList(String inputFilePath) throws IOException {
+    @Bean
+    public DataSourceSession dataSourceSession(
+            @Value("${input.file-path}") String inputFilePath,
+            @Value("${input.line-pattern}") Pattern pattern,
+            ResourceLoader resourceLoader) throws IOException {
 
-        try (
-                InputStream is = LitBulb.class.getClassLoader().getResourceAsStream(inputFilePath);
-                InputStreamReader isr = new InputStreamReader(is);
-                BufferedReader br = new BufferedReader(isr);) {
+        return DataSourceSession
+                .readStream()
+                .fromFile(resourceLoader.getResource(inputFilePath).getURI())
+                .dataUnit()
+                .asLine(line -> {
+                    Matcher matcher = pattern.matcher(line);
+                    matcher.find();
+                    Action action = Action.getByCode(matcher.group());
+                    matcher.find();
+                    String[] xy1 = matcher.group().split(",");
+                    matcher.find();
+                    String[] xy2 = matcher.group().split(",");
+                    Point point1 = new Point(Integer.parseInt(xy1[0]), Integer.parseInt(xy1[1]));
+                    Point point2 = new Point(Integer.parseInt(xy2[0]), Integer.parseInt(xy2[1]));
+                    return new Command(action, point1, point2);
+                })
+                .readDataDestiny()
+                .toBlockingQueue(100)
+                .load();
+    }
 
-            Pattern pattern = Pattern.compile(REGEX);
+    @Bean
+    public BulbGrid bulbGrid(@Value("${grid-size}") int gridSize) {
 
-            List<Command> commands = new ArrayList<>();
-
-            while(true) {
-                String line = br.readLine();
-                if(line == null || line.isBlank()) {
-                    break;
-                }
-                Matcher matcher = pattern.matcher(line);
-                matcher.find();
-                Action action = Action.getByCode(matcher.group());
-                matcher.find();
-                String[] xy1 = matcher.group().split(",");
-                matcher.find();
-                String[] xy2 = matcher.group().split(",");
-                Point point1 = new Point(Integer.parseInt(xy1[0]), Integer.parseInt(xy1[1]));
-                Point point2 = new Point(Integer.parseInt(xy2[0]), Integer.parseInt(xy2[1]));
-                commands.add(new Command(action, point1, point2));
-            }
-
-            return commands;
-        }
+        return new BulbGrid(gridSize);
     }
 }
 
-class BulbGrid {
+@Service
+class ResultService {
 
-    final BigBinary[] grid;
+    private static final Logger log = Logger.getLogger(ResultService.class.getName());
 
-    BulbGrid(int gridSize) {
+    private final BulbGrid bulbGrid;
 
-        this.grid = new BigBinary[gridSize];
-
-        for(int i = 0; i < grid.length; i++) {
-            grid[i] = new BigBinary(grid.length);
-        }
+    ResultService(BulbGrid bulbGrid) {
+        this.bulbGrid = bulbGrid;
     }
 
-    BigBinary createMask(int fromX, int toX) {
+    void process(String outputFilePath) {
 
-        BigBinary mask = new BigBinary(grid.length);
+        log.log(Level.INFO, () -> "Lit lights: " + bulbGrid.countLitBulbs());
 
-        int fromBlock = fromX / 64;
-        int toBlock = toX / 64;
+        try (BufferedWriter bw = new BufferedWriter(new PrintWriter(outputFilePath))) {
+            int gridLength = bulbGrid.getGrid().length;
 
-        for(int i = 0; i < mask.bitArray.length; i++) {
+            for (int i = gridLength - 1; i >= 0; i--) {
 
-            if(fromBlock <= i && i <= toBlock) {
+                String line = bulbGrid.getGrid()[i]
+                        .toString()
+                        .substring(0, gridLength)
+                        .replace('0', '.')
+                        .replace('1', '#');
 
-                int fromBlockOffset = i == fromBlock ? fromX % 64 : 0;
-                int toBlockOffset = i == toBlock ? toX % 64 : 63;
-
-                mask.bitArray[i] = fromBlockOffset == 0 ? 
-                    -1L << (63 - toBlockOffset) : 
-                    (-1L << -fromBlockOffset) ^ (-1L << (63 - toBlockOffset));
+                bw.write(line);
+                bw.newLine();
             }
+            bw.flush();
+        } catch (Exception e) {
+            log.log(Level.SEVERE, e, () -> "deu ruim");
         }
-
-        return mask;
-    }
-
-    void process(Command command) {
-
-        Point point1 = command.point1;
-        Point point2 = command.point2;
-
-        int fromX = Math.min(point1.x, point2.x);
-        int toX = Math.max(point1.x, point2.x);
-        BigBinary mask = createMask(fromX, toX);
-
-        int fromY = Math.min(point1.y, point2.y);
-        int toY = Math.max(point1.y, point2.y);
-
-        for(int i = fromY; i <= toY; i++) {
-
-            switch (command.action) {
-                case TOGGLE: {
-                    grid[i].bitOp((l1, l2) -> l1 ^ l2, mask);
-                    break;
-                }
-                case TURN_OFF: {
-                    grid[i].bitOp((l1, l2) -> l1 & (~l2), mask);
-                    break;
-                }
-                case TURN_ON: {
-                    grid[i].bitOp((l1, l2) -> l1 | l2, mask);
-                    break;
-                }
-            }
-        }
-    }
-
-    int countLitBulbs() {
-
-        int counter = 0;
-
-        for (int i = 0; i < grid.length; i++) {
-            
-            BigBinary row = grid[i];
-
-            for (int j = row.bitArray.length - 1; j >= 0; j--) {
-                
-                long block = row.bitArray[j];
-
-                int permutCounter = 0;
-                while(block != 0 && permutCounter < 64) {
-
-                    if((block & 1L) == 1L) {
-                        counter++;
-                    }
-                    block = block >> 1L;
-                    permutCounter++;
-                }
-            }
-        }
-
-        return counter;
     }
 }

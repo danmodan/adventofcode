@@ -14,13 +14,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import com.danmodan.adventofcode.util.DaemonThreadFactory;
-
 public class MD5LeadingZero {
 
     public static void main(String[] args) throws InterruptedException {
 
-        ExecutorService threadpool = Executors.newCachedThreadPool(new DaemonThreadFactory());
+        ExecutorService threadpool = Executors.newCachedThreadPool();
         int maxQueueSize = 10000;
         ThreadSafeQueue<Integer> queue = new ThreadSafeQueue<>(maxQueueSize);
         Semaphore semaphore = new Semaphore(0);

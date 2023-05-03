@@ -1,16 +1,13 @@
 package com.danmodan.adventofcode.day2;
 
 import java.nio.file.Paths;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import com.danmodan.adventofcode.common.config.LoggerConfig;
-import com.danmodan.adventofcode.util.Consumer;
-import com.danmodan.adventofcode.util.Consumer.TimeElapsedException;
-import com.danmodan.adventofcode.util.Producer;
-import com.danmodan.adventofcode.util.Reader;
-import com.danmodan.adventofcode.util.SynchronizedQueue;
+import com.danmodan.adventofcode.common.stream.DataSourceSession;
 
 public class WrappingPaperCalculator {
 
@@ -18,150 +15,38 @@ public class WrappingPaperCalculator {
     private static final int MAX_QUEUE_SIZE = 100;
     private static final String PATH = "2015/build/resources/main/day2/input.txt";
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
 
-        var logConfig = new LoggerConfig(Level.SEVERE);
+        var logConfig = new LoggerConfig(Level.FINEST);
         logConfig.createRootLogger();
+        var log = Logger.getLogger(WrappingPaperCalculator.class.getName());
 
-        SynchronizedQueue queue = new SynchronizedQueue(MAX_QUEUE_SIZE);
-        Calculator calculator = new Calculator();
-        Semaphore semaphore = new Semaphore(0);
-
-        Producer producer = Producer
-                .builder()
-                .path(Paths.get(PATH))
-                .reader(new Reader.LineReader(line -> {
+        var session = DataSourceSession
+                .readStream()
+                .fromFile(Paths.get(PATH).toUri())
+                .dataUnit().asLine(line -> {
                     String[] split = line.split("x");
                     String lenght = split[0];
                     String width = split[1];
                     String height = split[2];
                     return new Dimension(lenght, width, height);
-                }))
-                .queue(queue)
-                .maxQueueSize(MAX_QUEUE_SIZE)
-                .build();
+                })
+                .readDataDestiny().toBlockingQueue(MAX_QUEUE_SIZE)
+                .load();
 
-        Consumer consumer = Consumer
-                .builder()
-                .consumerFunc((Dimension dimension) -> calculator.addDimensions(dimension))
-                .queue(queue)
-                .delayMilliseconds(10)
-                .build();
+        Calculator calculator = new Calculator();
 
-        Thread[] threads = new Thread[MAX_CONSUMER_THREADS + 1 + 1];
-
-        // producer
-        threads[0] = createProducerThread(semaphore, producer);
-
-        // answer
-        threads[1] = createAnswerThread(semaphore, calculator, threads.length - 1);
-
-        // consumer
-        for (int i = 2; i < threads.length; i++) {
-            threads[i] = createConsumerThread(semaphore, consumer);
-        }
-
-        AnswerCaptureRunnable.log.setLevel(Level.INFO);
-
-        for (Thread t : threads) {
-            t.start();
-        }
-
-        for (Thread t : threads) {
-            t.join(5_000);
-        }
-    }
-
-    private static Thread createProducerThread(Semaphore semaphore, Producer producer) {
-
-        var t = new Thread(new ProducerRunnable(semaphore, producer));
-        t.setDaemon(true);
-        return t;
-    }
-
-    private static Thread createConsumerThread(Semaphore semaphore, Consumer consumer) {
-
-        var t = new Thread(new ConsumerRunnable(semaphore, consumer));
-        t.setDaemon(true);
-        return t;
-    }
-
-    private static Thread createAnswerThread(Semaphore semaphore, Calculator calculator, int amountWorkerThreads) {
-
-        var t = new Thread(new AnswerCaptureRunnable(semaphore, calculator, amountWorkerThreads));
-        t.setDaemon(true);
-        return t;
-    }
-}
-
-class ProducerRunnable implements Runnable {
-
-    private final Semaphore semaphore;
-    private final Producer producer;
-
-    public ProducerRunnable(Semaphore semaphore, Producer producer) {
-        this.semaphore = semaphore;
-        this.producer = producer;
-    }
-
-    @Override
-    public void run() {
-        producer.run();
-        semaphore.release();
-    }
-}
-
-class ConsumerRunnable implements Runnable {
-
-    private final Semaphore semaphore;
-    private final Consumer consumer;
-
-    public ConsumerRunnable(Semaphore semaphore, Consumer consumer) {
-        this.semaphore = semaphore;
-        this.consumer = consumer;
-    }
-
-    @Override
-    public void run() {
-
-        try {
-            consumer.run();
-        } catch (TimeElapsedException e) {
-        } finally {
-            semaphore.release();
-        }
-    }
-}
-
-class AnswerCaptureRunnable implements Runnable {
-
-    public static final Logger log = Logger.getLogger(AnswerCaptureRunnable.class.getName());
-
-    private final Semaphore semaphore;
-    private final Calculator calculator;
-    private final int semaphorePermits;
-
-    public AnswerCaptureRunnable(Semaphore semaphore, Calculator calculator, int semaphorePermits) {
-        this.semaphore = semaphore;
-        this.calculator = calculator;
-        this.semaphorePermits = semaphorePermits;
-    }
-
-    @Override
-    public void run() {
-        lock();
-        log.info(String.format("Wrapping area: %.2f - Ribbon feet: %.2f", calculator.getTotalWrappingArea(),
-                calculator.getTotalRibbonFeet()));
-    }
-
-    private void lock() {
-        try {
-            semaphore.acquire(semaphorePermits);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            semaphore.release();
-        }
+        CompletableFuture
+                .allOf(
+                        Stream
+                                .concat(
+                                        Stream.of(CompletableFuture.runAsync(session::connect)),
+                                        Stream.generate(() -> CompletableFuture
+                                                .runAsync(() -> session.performOnData(calculator::addDimensions)))
+                                                .limit(MAX_CONSUMER_THREADS))
+                                .toArray(CompletableFuture[]::new))
+                .thenRun(() -> log.info("" + calculator.getTotalWrappingArea()))
+                .join();
     }
 }
 

@@ -14,6 +14,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.danmodan.adventofcode.common.annotation.Delaeble;
@@ -40,8 +41,9 @@ public class AspectConfig {
     @Component
     static class Advices {
 
+        @Order(100)
         @Around(
-            value = "com.danmodan.adventofcode.config.AspectConfig.Pointcuts.loggable(loggable)", 
+            value = "AspectConfig.Pointcuts.loggable(loggable)", 
             argNames = "loggable")
         public Object logInputOutput(ProceedingJoinPoint jp, Loggable loggable) throws Throwable {
 
@@ -51,15 +53,16 @@ public class AspectConfig {
             Level currentLevel = Level.parse(loggable.level());
             Logger logger = Logger.getLogger(targetClassName);
 
-            logger.log(currentLevel, String.format("%s -> %s", shortSignature, args));
+            logger.log(currentLevel, () -> String.format("%s -> %s", shortSignature, args));
             Object result = jp.proceed();
-            logger.log(currentLevel, String.format("%s <- %s", shortSignature, result));
+            logger.log(currentLevel, () -> String.format("%s <- %s", shortSignature, result));
 
             return result;
         }
 
+        @Order(101)
         @AfterThrowing(
-            value = "com.danmodan.adventofcode.config.AspectConfig.Pointcuts.loggable(loggable)", 
+            value = "AspectConfig.Pointcuts.loggable(loggable)", 
             throwing = "e", 
             argNames = "loggable,e")
         public void logError(JoinPoint jp, Loggable loggable, Exception e) {
@@ -69,8 +72,32 @@ public class AspectConfig {
             String args = Stream.of(jp.getArgs()).map(Objects::toString).collect(Collectors.joining(","));
             Logger logger = Logger.getLogger(targetClassName);
 
-            logger.log(Level.SEVERE, String.format("%s -> %s", shortSignature, args), e);
+            logger.log(Level.SEVERE, e, () -> String.format("%s -> %s", shortSignature, args));
         }
 
+        @Order(200)
+        @Around(
+            value = "AspectConfig.Pointcuts.delaeble(delaeble)",
+            argNames = "delaeble")
+        public Object delayMethod(ProceedingJoinPoint jp, Delaeble delaeble) throws Throwable {
+
+            long milisseconds = delaeble.value();
+            byte location = delaeble.location();
+
+            if((location & 1) != 0) {
+
+                System.out.println("sleep antes");
+                Thread.sleep(milisseconds);
+            }
+
+            Object result = jp.proceed();
+
+            if((location & 2) != 0) {
+                System.out.println("sleep depois");
+                Thread.sleep(milisseconds);
+            }
+
+            return result;
+        }
     }
 }

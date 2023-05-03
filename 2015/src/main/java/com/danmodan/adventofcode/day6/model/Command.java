@@ -11,4 +11,9 @@ public class Command {
         this.point1 = point1;
         this.point2 = point2;
     }
+
+    @Override
+    public String toString() {
+        return "Command [action=" + action + ", point1=" + point1 + ", point2=" + point2 + "]";
+    }
 }

@@ -36,6 +36,7 @@ public class LoggerConfig {
 
         Handler handler = new ConsoleHandler();
         handler.setFormatter(getFormatter());
+        handler.setLevel(logLevel);
         return handler;
     }
 
