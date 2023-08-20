@@ -9,13 +9,12 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
-import jakarta.annotation.PostConstruct;
-
 @Configuration
-public class LoggerConfig {
+public class LoggerConfig implements InitializingBean {
 
     private final Level logLevel;
 
@@ -23,13 +22,13 @@ public class LoggerConfig {
         this.logLevel = logLevel;
     }
 
-    @PostConstruct
-    public void createRootLogger() {
+    @Override
+    public void afterPropertiesSet() {
 
         Logger rootLogger = Logger.getLogger("com.danmodan.adventofcode");
-        rootLogger.setLevel(logLevel);
         rootLogger.setUseParentHandlers(false);
         rootLogger.addHandler(getConsoleHandler());
+        rootLogger.setLevel(logLevel);
     }
 
     private Handler getConsoleHandler() {

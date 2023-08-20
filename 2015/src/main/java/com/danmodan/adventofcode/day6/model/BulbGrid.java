@@ -15,7 +15,7 @@ public class BulbGrid {
         }
     }
 
-    private BigBinary createMask(int fromX, int toX) {
+    public BigBinary createMask(int fromX, int toX) {
 
         BigBinary mask = new BigBinary(grid.length);
 

@@ -26,7 +26,7 @@ public class DeliveringPresents {
     public static final void main(String... args) {
 
         var logConfig = new LoggerConfig(Level.SEVERE);
-        logConfig.createRootLogger();
+        logConfig.afterPropertiesSet();
 
         ThreadSafeQueue queue = new ThreadSafeQueue(MAX_QUEUE_SIZE);
         Semaphore semaphore = new Semaphore(0);

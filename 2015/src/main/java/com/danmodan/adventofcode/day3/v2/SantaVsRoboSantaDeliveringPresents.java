@@ -27,7 +27,7 @@ public class SantaVsRoboSantaDeliveringPresents {
     public static final void main(String... args) {
 
         var logConfig = new LoggerConfig(Level.SEVERE);
-        logConfig.createRootLogger();
+        logConfig.afterPropertiesSet();
 
         ThreadSafeQueue santaQueue = new ThreadSafeQueue(MAX_QUEUE_SIZE);
         ThreadSafeQueue roboQueue = new ThreadSafeQueue(MAX_QUEUE_SIZE);

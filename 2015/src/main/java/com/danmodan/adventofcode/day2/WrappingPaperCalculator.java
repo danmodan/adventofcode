@@ -18,7 +18,7 @@ public class WrappingPaperCalculator {
     public static void main(String[] args) {
 
         var logConfig = new LoggerConfig(Level.FINEST);
-        logConfig.createRootLogger();
+        logConfig.afterPropertiesSet();
         var log = Logger.getLogger(WrappingPaperCalculator.class.getName());
 
         var session = DataSourceSession

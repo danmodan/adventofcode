@@ -26,7 +26,7 @@ public class AspectConfig {
 
     @Aspect
     @Component
-    static class Pointcuts {
+    class Pointcuts {
 
         @Pointcut("@annotation(loggable)")
         public void loggable(Loggable loggable) {
@@ -39,7 +39,7 @@ public class AspectConfig {
 
     @Aspect
     @Component
-    static class Advices {
+    class Advices {
 
         @Order(100)
         @Around(
@@ -85,15 +85,12 @@ public class AspectConfig {
             byte location = delaeble.location();
 
             if((location & 1) != 0) {
-
-                System.out.println("sleep antes");
                 Thread.sleep(milisseconds);
             }
 
             Object result = jp.proceed();
 
             if((location & 2) != 0) {
-                System.out.println("sleep depois");
                 Thread.sleep(milisseconds);
             }
 
